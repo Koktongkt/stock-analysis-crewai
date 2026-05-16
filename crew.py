@@ -57,6 +57,7 @@ class StockAnalysisCrew:
             llm=llm,
             tools=[
                 ScrapeWebsiteTool(),
+                WebsiteSearchTool(),
                 SEC10QTool(stock_name=self.stock_name),
                 SEC10KTool(stock_name=self.stock_name),
             ]
@@ -139,7 +140,12 @@ class StockAnalysisCrew:
     def crew(self) -> Crew:
         return Crew(
             agents=self.agents,
-            tasks=self.tasks,
+            tasks= [
+                self.financial_analysis(),
+                self.research(),
+                self.filings_analysis(),
+                self.recommend()              
+            ]
             process=Process.sequential,
             verbose=True,
             memory=False
