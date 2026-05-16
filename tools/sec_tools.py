@@ -1,6 +1,7 @@
 import os
 from typing import Any, Optional, Type
-from pydantic.v1 import BaseModel, Field
+#from pydantic.v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from crewai_tools import RagTool
 from sec_api import QueryApi  # Make sure to have sec_api installed
 from embedchain.models.data_type import DataType
@@ -27,7 +28,6 @@ class SEC10KTool(RagTool):
     args_schema: Type[BaseModel] = SEC10KToolSchema
 
     def __init__(self, stock_name: Optional[str] = None, **kwargs):
-        print("enter init")
         # exit()
         super().__init__(**kwargs)
         if stock_name is not None:
@@ -108,7 +108,6 @@ class SEC10QTool(RagTool):
     args_schema: Type[BaseModel] = SEC10QToolSchema
 
     def __init__(self, stock_name: Optional[str] = None, **kwargs):
-        print("enter init")
         # exit()
         super().__init__(**kwargs)
         if stock_name is not None:
@@ -117,7 +116,7 @@ class SEC10QTool(RagTool):
                 self.add(content)
                 self.description = f"A tool that can be used to semantic search a query from {stock_name}'s latest 10-Q SEC form's content as a txt file."
                 self.args_schema = FixedSEC10QToolSchema
-                self._generate_description()
+                
 
     def get_10q_url_content(self, stock_name: str) -> Optional[str]:
         """Fetches the URL content as txt of the latest 10-Q form for the given stock name."""
@@ -141,7 +140,7 @@ class SEC10QTool(RagTool):
             url = filings[0]['linkToFilingDetails']
             
             headers = {
-                "User-Agent": "crewai.com bisan@crewai.com",
+                "User-Agent": "StockAnalysisResearchBot/1.0 tan1995_@hotmail.com",
                 "Accept-Encoding": "gzip, deflate",
                 "Host": "www.sec.gov"
             }
@@ -152,7 +151,7 @@ class SEC10QTool(RagTool):
             text = h.handle(response.content.decode("utf-8"))
 
             # Removing all non-English words, dollar signs, numbers, and newlines from text
-            text = re.sub(r"[^a-zA-Z$0-9\s\n]", "", text)
+            text = re.sub(r"[^\w\s$%.,:;()\-\/]", "", text)
             return text
         except requests.exceptions.HTTPError as e:
             print(f"HTTP error occurred: {e}")
