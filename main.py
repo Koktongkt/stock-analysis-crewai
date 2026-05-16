@@ -1,5 +1,6 @@
 import sys
 from crew import StockAnalysisCrew
+from datetime import datetime
 
 def run():
     print("\n--- Stock Analysis Configuration ---")
@@ -13,6 +14,7 @@ def run():
 
     inputs = {
         'company_stock': company_stock,
+        'today': datetime.now().strftime("%Y-%m-%d")
     }
     
     print(f"\n🚀 Kickstarting crew to analyze {company_stock}...\n")
@@ -28,6 +30,7 @@ def train():
 
     inputs = {
         'company_stock': company_stock,
+        'today': datetime.now().strftime("%Y-%m-%d")
     }
     try:
         iterations = int(sys.argv[1]) if len(sys.argv) > 1 else 5

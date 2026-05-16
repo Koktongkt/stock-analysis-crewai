@@ -6,6 +6,7 @@ from tools.sec_tools import SEC10KTool, SEC10QTool
 
 from crewai_tools import WebsiteSearchTool, ScrapeWebsiteTool
 
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -20,65 +21,92 @@ class StockAnalysisCrew:
     def __init__(self, inputs: dict = None):
         self.inputs = inputs or {}
         self.stock_name = self.inputs.get('company_stock', "")
+
+        # Initialize expensive tools ONCE
+        self.sec10q_tool = SEC10QTool(stock_name=self.stock_name)
+        self.sec10k_tool = SEC10KTool(stock_name=self.stock_name)
+
+        # Shared lightweight tools
+        self.scrape_tool = ScrapeWebsiteTool()
+        self.search_tool = WebsiteSearchTool()
+        self.calculator_tool = CalculatorTool()
         
     @agent
     def financial_analyst_agent(self) -> Agent:
         return Agent(
             role="Financial Analyst",
-            goal="Analyze the financial statements, SEC filings, and market data to produce investment insights",
+            goal=(
+                f"Analyze {self.stock_name}'s financial statements, SEC filings, and market data to produce investment insights"
+            ),
             backstory=(
-                "You are a top-tier financial analyst with expertise in analyzing financial statements, SEC fillings, "
-                "and market data to produce investment insights. You are highly detail-oriented and always support your "
-                "findings with solid evidence."
+                "You are a veteran Wall Street financial analyst with expertise in "
+                "fundamental analysis, SEC filing interpretation, valuation modeling, "
+                "and identifying financial risks and growth drivers. "
+                "You provide evidence-backed analysis using quantitative and qualitative data."
             ),
             verbose=True,
             llm=llm,
             tools=[
-                ScrapeWebsiteTool(),
-                WebsiteSearchTool(),
-                CalculatorTool(),
-                SEC10QTool(stock_name=self.stock_name),
-                SEC10KTool(stock_name=self.stock_name),
+                self.scrape_tool,
+                self.search_tool,
+                self.calculator_tool,
+                self.sec10q_tool,
+                self.sec10k_tool,
             ]
         )
 
     @agent
     def research_analyst_agent(self) -> Agent:
         return Agent(
-            role="Research Analyst",
-            goal="Conduct comprehensive research on the company and its industry to provide actionable insights",
-            backstory=(
-                "You are a skilled research analyst with a deep understanding of the financial and market trends for all industries. "
-                "You excel at gathering and synthesizing information from various sources to provide a complete picture "
-                "of the company's position in the market. "
-                "you're skilled in sifting through news, company announcements, and market sentiments."
+            role="Equity Research Analyst",
+
+            goal=(
+                f"Research {self.stock_name}'s market environment, "
+                "industry trends, news sentiment, competitive positioning, "
+                "and macroeconomic catalysts."
             ),
+
+            backstory=(
+                "You are an elite equity research analyst specializing in "
+                "market intelligence, industry analysis, earnings sentiment, "
+                "and identifying catalysts affecting stock performance. "
+                "You synthesize information from filings, news, and industry developments."
+            ),
+
             verbose=True,
             llm=llm,
+
             tools=[
-                ScrapeWebsiteTool(),
-                WebsiteSearchTool(),
-                SEC10QTool(stock_name=self.stock_name),
-                SEC10KTool(stock_name=self.stock_name),
+                self.scrape_tool,
+                self.search_tool,
+                self.sec10q_tool,
+                self.sec10k_tool,
             ]
         )
 
     @agent
     def investment_advisor_agent(self) -> Agent:
         return Agent(
-            role="Investment Advisor",
-            goal="Based on the analysis and research, provide a clear recommendation on whether to buy, sell, or hold the stock.",
-            backstory=(
-                "You are a seasoned investment advisor with a strong track record of providing sound investment advice. "
-                "You have a deep understanding of financial markets and are skilled at interpreting complex financial data to make informed recommendations. "
-                "Your advice is always based on thorough analysis and research, and you are adept at communicating your recommendations clearly and persuasively."
+            role="Chief Investment Strategist",
+
+            goal=(
+                f"Synthesize all research and analysis on {self.stock_name} "
+                "to provide a professional investment recommendation and risk assessment."
             ),
+
+            backstory=(
+                "You are a seasoned investment strategist managing institutional portfolios. "
+                "You specialize in converting complex financial analysis into actionable "
+                "investment recommendations with clear risk/reward tradeoffs."
+            ),
+
             verbose=True,
             llm=llm,
+
             tools=[
-                ScrapeWebsiteTool(),
-                WebsiteSearchTool(),
-                CalculatorTool(),
+                self.scrape_tool,
+                self.search_tool,
+                self.calculator_tool,
             ]
         )
 
@@ -89,6 +117,7 @@ class StockAnalysisCrew:
             "Conduct a thorough analysis of {company_stock}'s financial health and market performance. "
             "Examine key metrics like P/E ratio, EPS growth, revenue trends, and debt-to-equity ratio. "
             "Compare against industry peers and market trends."
+            "Use information up till {today}."
         ),
             expected_output=(
             "A structured financial report covering strengths, weaknesses, "
@@ -102,7 +131,7 @@ class StockAnalysisCrew:
         return Task(
             description=(
             "Collect and summarize recent news, press releases, and market analysis "
-            "related to {company_stock}. Focus on sentiment, analyst opinions, and upcoming events."
+            "related to {company_stock}, up to {today}. Focus on sentiment, analyst opinions, and upcoming events."
         ),
             expected_output=(
             "A structured news summary highlighting sentiment shifts and catalysts affecting the stock."
@@ -114,7 +143,7 @@ class StockAnalysisCrew:
     def filings_analysis(self) -> Task:
         return Task(
             description=(
-            "Analyze latest 10-Q and 10-K filings for {company_stock}. "
+            "Analyze latest 10-Q and 10-K filings for {company_stock} until {today} "
             "Focus on MD&A, financial statements, insider activity, and risks."
         ),
         expected_output=(
@@ -128,7 +157,7 @@ class StockAnalysisCrew:
         return Task(
             description=(
             "Synthesize financial analysis, research, and filings into a final investment recommendation "
-            "for {company_stock}."
+            "for {company_stock}, as of {today}"
         ),
         expected_output=(
             "A well-structured investment report with clear buy/hold/sell stance and justification."
@@ -145,7 +174,7 @@ class StockAnalysisCrew:
                 self.research(),
                 self.filings_analysis(),
                 self.recommend()              
-            ]
+            ],
             process=Process.sequential,
             verbose=True,
             memory=False
