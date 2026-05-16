@@ -72,7 +72,7 @@ class SEC10KTool(RagTool):
             h.ignore_links = False
             text = h.handle(response.content.decode("utf-8"))
 
-            text = re.sub(r"[^a-zA-Z$0-9\s\n]", "", text)
+            text = re.sub(r"[^a-zA-Z0-9\s\n$.,%()-]", "", text)
             return text
         except requests.exceptions.HTTPError as e:
             print(f"HTTP error occurred: {e}")
@@ -116,6 +116,7 @@ class SEC10QTool(RagTool):
                 self.add(content)
                 self.description = f"A tool that can be used to semantic search a query from {stock_name}'s latest 10-Q SEC form's content as a txt file."
                 self.args_schema = FixedSEC10QToolSchema
+                self._generate_description()
                 
 
     def get_10q_url_content(self, stock_name: str) -> Optional[str]:
@@ -151,7 +152,7 @@ class SEC10QTool(RagTool):
             text = h.handle(response.content.decode("utf-8"))
 
             # Removing all non-English words, dollar signs, numbers, and newlines from text
-            text = re.sub(r"[^\w\s$%.,:;()\-\/]", "", text)
+            text = re.sub(r"[^a-zA-Z0-9\s\n$.,%()-]", "", text)
             return text
         except requests.exceptions.HTTPError as e:
             print(f"HTTP error occurred: {e}")
