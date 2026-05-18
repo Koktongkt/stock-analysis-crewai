@@ -7,6 +7,8 @@ from tools.sec_tools import SEC10KTool, SEC10QTool
 from crewai_tools import WebsiteSearchTool, ScrapeWebsiteTool
 
 
+
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -21,6 +23,10 @@ class StockAnalysisCrew:
     def __init__(self, inputs: dict = None):
         self.inputs = inputs or {}
         self.stock_name = self.inputs.get('company_stock', "")
+
+        # Initialize clients
+        #self.pipeline = IngestionPipeline()
+        #self.research_packet = self.pipeline.build_research_packet(self.symbol)
 
         # Initialize expensive tools ONCE
         self.sec10q_tool = SEC10QTool(stock_name=self.stock_name)
