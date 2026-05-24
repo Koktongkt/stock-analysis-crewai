@@ -1,21 +1,18 @@
 # AI Crew for Stock Analysis
 ## Introduction
-This project is an example using the CrewAI framework to automate the process of analyzing a stock. CrewAI orchestrates autonomous AI agents, enabling them to collaborate and execute complex tasks efficiently.
+This project is an example using the CrewAI framework to automate the process of analyzing a stock. CrewAI orchestrates autonomous AI agents, enabling them to collaborate and execute complex tasks efficiently. An additional step is added at the initial phase to enforce important data gathering for financial analysis. Areas such as technicals, fundamendals, Macro and market data (price) were considered. You can modify to whatever clients you think is important for financial analysis.s
 
-By [@joaomdmoura](https://x.com/joaomdmoura)
 
 ## CrewAI Framework
 CrewAI is designed to facilitate the collaboration of role-playing AI agents. In this example, these agents work together to give a complete stock analysis and investment recommendation
 
 ## Running the Script
-It uses GPT-4 by default so you should have access to that to run it.
+It currently uses local ollama-model: gemma4:e4b. you can change it to stronger better such as GPT5 / Claude Opus 4.7, etc but beware of API costs.
+Currently, the crewai ragtool has an in-built OPENAPI Key for chromadb vectorization. If you want to do it locally with a embedding model (Ollama) instead, need to remove ragtool and rebuild yourself.
 
-***Disclaimer:** This will use gpt-4 unless you changed it 
-not to, and by doing so it will cost you money.*
-
-- **Configure Environment**: Copy ``.env.example` and set up the environment variables for [Browseless](https://www.browserless.io/), [Serper](https://serper.dev/), [SEC-API](https://sec-api.io) and [OpenAI](https://platform.openai.com/api-keys)
-- **Install Dependencies**: Run `poetry install --no-root`.
-- **Execute the Script**: Run `poetry run python3 main.py`. (Note: execute from the directory containing main.pyy)
+- **Configure Environment**: Set up the environment variables for [SEC-API](https://sec-api.io) and [OpenAI](https://platform.openai.com/api-keys). You can use $env:SEC_API_KEY / OPENAI_APU_KEY = "xx" for quick testing.
+- **API KEYS**: Create .env for your own designed clients for data ingestion layer. Modify the base_client to what api you are using. Update the config/setting.py for the Class settings with your own designed clients api key variables.
+- **Install Dependencies**: Run `pip install -r requirements.txt`.
 
 ## Details & Explanation
 - **Running the Script**: Execute `python main.py`` and input the company to be analyzed when prompted. The script will leverage the CrewAI framework to analyze the company and generate a detailed report.
