@@ -19,3 +19,6 @@ chromadb==0.5.23
 
 sec-api==1.0.33
 html2text==2024.2.26
+
+massive #polygon python client
+yfinance # yahoo finance client

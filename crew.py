@@ -5,8 +5,7 @@ from tools.calculator_tool import CalculatorTool
 from tools.sec_tools import SEC10KTool, SEC10QTool
 
 from crewai_tools import WebsiteSearchTool, ScrapeWebsiteTool
-
-
+from data.ingestion_pipeline import IngestionPipeline
 
 
 from dotenv import load_dotenv
@@ -25,8 +24,8 @@ class StockAnalysisCrew:
         self.stock_name = self.inputs.get('company_stock', "")
 
         # Initialize clients
-        #self.pipeline = IngestionPipeline()
-        #self.research_packet = self.pipeline.build_research_packet(self.symbol)
+        self.pipeline = IngestionPipeline(symbol=self.stock_name)
+        self.research_packet = self.pipeline.build_research_packet()
 
         # Initialize expensive tools ONCE
         self.sec10q_tool = SEC10QTool(stock_name=self.stock_name)
@@ -36,6 +35,7 @@ class StockAnalysisCrew:
         self.scrape_tool = ScrapeWebsiteTool()
         self.search_tool = WebsiteSearchTool()
         self.calculator_tool = CalculatorTool()
+
         
     @agent
     def financial_analyst_agent(self) -> Agent:
@@ -124,10 +124,14 @@ class StockAnalysisCrew:
             "Examine key metrics like P/E ratio, EPS growth, revenue trends, and debt-to-equity ratio. "
             "Compare against industry peers and market trends."
             "Use information up till {today}."
+            "You are also given the following research packet to analyze:\n\n"
+            "FUNDAMENTALS:\n{fundamentals}\n\n"
+            "TECHNICALS:\n{technicals}\n\n"
+            "MARKET DATA:\n{market_data}\n\n"
         ),
             expected_output=(
-            "A structured financial report covering strengths, weaknesses, "
-            "valuation, and competitive positioning."
+            "A structured financial report covering its fundamental and technical strengths, weaknesses, "
+            "valuations, and competitive positioning."
         ),    
             agent=self.financial_analyst_agent(),
         )
@@ -138,9 +142,12 @@ class StockAnalysisCrew:
             description=(
             "Collect and summarize recent news, press releases, and market analysis "
             "related to {company_stock}, up to {today}. Focus on sentiment, analyst opinions, and upcoming events."
+            "You are also given the following research packet to analyze:\n\n"
+            "MACRO:\n{macro}\n\n"
+            "Focus on catalysts, sentiment shifts, and macro risks."
         ),
             expected_output=(
-            "A structured news summary highlighting sentiment shifts and catalysts affecting the stock."
+            "A structured news summary highlighting sentiment and macro shifts and catalysts affecting the stock."
         ),    
             agent=self.research_analyst_agent(),
         )
@@ -163,7 +170,13 @@ class StockAnalysisCrew:
         return Task(
             description=(
             "Synthesize financial analysis, research, and filings into a final investment recommendation "
-            "for {company_stock}, as of {today}"
+            "for {company_stock}, as of {today}\n."
+            "Available information includes:\n\n"
+            "FUNDAMENTALS:\n{fundamentals}\n\n"
+            "TECHNICALS:\n{technicals}\n\n"
+            "MARKET DATA:\n{market_data}\n\n"
+            "MACRO:\n{macro}\n\n"
+            "Generate final investment recommendation (Buy/Hold/Sell) with a clear rationale and risk assessment."
         ),
         expected_output=(
             "A well-structured investment report with clear buy/hold/sell stance and justification."
@@ -184,4 +197,16 @@ class StockAnalysisCrew:
             process=Process.sequential,
             verbose=True,
             memory=False
+        )
+    
+    def run(self):
+        return self.crew().kickoff(
+            inputs={
+                **self.inputs,
+
+                "fundamentals": self.research_packet["fundamentals"],
+                "technicals": self.research_packet["technicals"],
+                "macro": self.research_packet["macro"],
+                "market_data": self.research_packet.get("market_data"),
+            }
         )

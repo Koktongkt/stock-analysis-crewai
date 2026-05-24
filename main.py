@@ -18,7 +18,7 @@ def run():
     }
     
     print(f"\n🚀 Kickstarting crew to analyze {company_stock}...\n")
-    return StockAnalysisCrew(inputs=inputs).crew().kickoff(inputs=inputs)
+    return StockAnalysisCrew(inputs=inputs).run()
 
 def train():
     """
